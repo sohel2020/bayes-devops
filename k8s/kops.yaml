@@ -1,0 +1,186 @@
+apiVersion: kops.k8s.io/v1alpha2
+kind: Cluster
+metadata:
+  name: k8s.example.com
+spec:
+  api:
+    dns: {}
+  authentication:
+    aws: {}
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  configBase: s3://example-bucket/k8s.example.com
+  docker:
+    storage: overlay2
+  etcdClusters:
+  - etcdMembers:
+    - encryptedVolume: false
+      instanceGroup: master-eu-central-1a
+      name: a
+    - encryptedVolume: false
+      instanceGroup: master-eu-central-1b
+      name: b
+    - encryptedVolume: false
+      instanceGroup: master-eu-central-1c
+      name: c
+    name: main
+  - etcdMembers:
+    - encryptedVolume: false
+      instanceGroup: master-eu-central-1a
+      name: a
+    - encryptedVolume: false
+      instanceGroup: master-eu-central-1b
+      name: b
+    - encryptedVolume: false
+      instanceGroup: master-eu-central-1c
+      name: c
+    name: events
+  iam:
+    legacy: true
+  kubeAPIServer:
+    admissionControl:
+      - NamespaceLifecycle
+      - LimitRanger
+      - ServiceAccount
+      - DefaultStorageClass
+      - DefaultTolerationSeconds
+      - MutatingAdmissionWebhook
+      - ValidatingAdmissionWebhook
+      - NodeRestriction
+      - PodPreset
+      - ResourceQuota
+    runtimeConfig:
+      settings.k8s.io/v1alpha1: "true"
+  kubelet:
+    anonymousAuth: false
+  kubernetesApiAccess:
+  - 0.0.0.0/0
+  kubernetesVersion: 1.15.11
+  masterInternalName: api.internal.k8s.example.com
+  masterPublicName: api.k8s.example.com
+  networkCIDR: 10.0.0.0/16
+  networkID: vpc-2dc3884a
+  networking:
+    kubenet: {}
+  nonMasqueradeCIDR: 100.64.0.0/10
+  sshAccess:
+  - 0.0.0.0/0
+  subnets:
+  - cidr: 10.0.101.0/24
+    name: eu-central-1a
+    type: Public
+    zone: eu-central-1a
+  - cidr: 10.0.102.0/24
+    name: eu-central-1b
+    type: Public
+    zone: eu-central-1b
+  - cidr: 10.0.103.0/24
+    name: eu-central-1c
+    type: Public
+    zone: eu-central-1c
+  topology:
+    dns:
+      type: Public
+    masters: public
+    nodes: public
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: k8s.example.com
+  name: master-eu-central-1a
+spec:
+  cloudLabels:
+    scheduler:ebs-snapshot: default
+    monitoring: "true"
+  image: ami-0e342d72b12109f91
+  machineType: t3.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-central-1a
+  role: Master
+  subnets:
+  - eu-central-1a
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: k8s.example.com
+  name: master-eu-central-1b
+spec:
+  cloudLabels:
+    scheduler:ebs-snapshot: default
+    monitoring: "true"
+  image: ami-0e342d72b12109f91
+  machineType: t3.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-central-1b
+  role: Master
+  subnets:
+  - eu-central-1b
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: k8s.example.com
+  name: master-eu-central-1c
+spec:
+  cloudLabels:
+    scheduler:ebs-snapshot: default
+    monitoring: "true"
+  image: ami-0e342d72b12109f91
+  machineType: t3.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-central-1c
+  role: Master
+  subnets:
+  - eu-central-1c
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: k8s.example.com
+  name: nodes
+spec:
+  cloudLabels:
+    monitoring: "true"
+  image: ami-0e342d72b12109f91
+  kubelet:
+    kubeReserved:
+      cpu: "200m"
+      memory: "400Mi"
+      ephemeral-storage: "10Gi"
+    systemReserved:
+      cpu: "100m"
+      memory: "1Gi"
+      ephemeral-storage: "10Gi"
+  machineType: r5.xlarge
+  maxSize: 2
+  minSize: 2
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes
+  role: Node
+  rootVolumeSize: 200
+  subnets:
+  - eu-central-1a
+  - eu-central-1b
+  - eu-central-1c
